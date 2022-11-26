@@ -1,0 +1,96 @@
+---
+title: "power_analysis_scenario_2"
+output: pdf_document
+date: "2022-10-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages, include=FALSE, warning=FALSE, message=FALSE}
+library(data.table)
+library(ggplot2)
+library(sandwich)
+library(lmtest)
+library(ggplot2)
+library(knitr)
+library(tidyverse)
+```
+
+``` {r data, include = TRUE}
+#There are two different aspects of power analysis.  One is to calculate the necessary sample size for a specified power as in Example 1.  The other aspect is to calculate the power when given a specific sample size as in Example 2.  Technically, power is the probability of rejecting the null hypothesis when the specific alternative hypothesis is true. 
+data <- fread('./practice_data/power_analysis_data.csv')
+data 
+```
+
+```{r senario2.1 different effects, include=TRUE}
+set.seed(123)
+# Set Up Test function to return the P-Value
+# Different sample sizes, 80/20 control and treatment split
+sample_d <- function(data,num_subjects){
+  d_treat = data[data$treament_control == 1]
+  d_cont  = data[data$treament_control == 0]
+  d_comb = rbind(d_treat[sample(nrow(d_treat), size = ceiling(num_subjects*.20), replace = TRUE), ],
+                 d_cont[sample(nrow(d_cont), size = ceiling(num_subjects*.80), replace = TRUE), ])
+  exp_data <- d_comb[, .(avg_score = sample(avg_score, num_subjects, replace = TRUE)), by = treament_control]
+  t_test <- exp_data[, t.test(avg_score ~ treament_control)]
+  return(t_test$p.value)
+}
+
+percentages_to_sample <- c()
+num_sample            <- c()
+sample_power          <- c()
+for(size in seq(from=10, to=200, by=5)) {
+  num_sample     <- c(num_sample, size)
+  p_values       <- replicate(100, sample_d(data,size))
+  power          <- mean(p_values < 0.05)
+  sample_power   <- c(sample_power, power)
+}
+
+#total number of pvalues
+length(num_sample)
+length(sample_power)
+ggplot() + aes(x=num_sample, y=sample_power) +
+  labs( x = "Sample Size", y = "Power", title ="Power Analysis based on increasing sample size on 80/20 control and treatment split") +
+  geom_line(color = 'blue') + 
+  theme_bw() + # has to be before axis text manipulations because disables their effect otherwise
+  theme(axis.text.x = element_text(angle = 0, hjust=1),text = element_text(size=8))+
+  scale_x_continuous("Sample Size", labels = as.character(num_sample), breaks = num_sample)
+```
+
+```{r senario2.2 different split, include=TRUE}
+set.seed(123)
+# Set Up Test function to return the P-Value
+# Same sample sizes, different control and treatment split
+sample_d_split <- function(data,num_subjects,split){
+  d_treat = data[data$treament_control == 1]
+  d_cont  = data[data$treament_control == 0]
+  d_comb = rbind(d_treat[sample(nrow(d_treat), size = ceiling(num_subjects*split), replace = TRUE), ],
+                 d_cont[sample(nrow(d_cont), size = ceiling(num_subjects*(1-split)), replace = TRUE), ])
+  exp_data <- d_comb[, .(avg_score = sample(avg_score, num_subjects, replace = TRUE)), by = treament_control]
+  t_test <- exp_data[, t.test(avg_score ~ treament_control)]
+  return(t_test$p.value)
+}
+
+percentages_to_sample_v2 <- c()
+num_split_v2             <- c()
+sample_power_v2          <- c()
+for(split in seq(from=0.1, to=0.9, by=0.1)) {
+  num_split_v2      <- c(num_split_v2, split)
+  p_values_v2       <- replicate(1000, sample_d_split(data,20,split))
+  power_v2          <- mean(p_values_v2 < 0.05)
+  sample_power_v2   <- c(sample_power_v2, power_v2)
+}
+
+#total number of pvalues
+length(num_split_v2)
+length(sample_power_v2)
+
+ggplot() + aes(x=num_split_v2, y=sample_power_v2) +
+  labs( x = "Control / Treatment Split", y = "Power", title ="Power Analysis based on varying split in control and treatment split") +
+  geom_line(color = 'red') + 
+  theme_bw() + # has to be before axis text manipulations because disables their effect otherwise
+  theme(axis.text.x = element_text(angle = 0, hjust=1),text = element_text(size=8))+
+  scale_x_continuous("Split", labels = as.character(num_split_v2), breaks = num_split_v2)
+```

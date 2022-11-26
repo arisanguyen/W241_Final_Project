@@ -1,0 +1,88 @@
+---
+title: "data_preprocessing_Arisa"
+output: pdf_document
+---
+
+```{r load packages, message = FALSE}
+library(data.table)
+
+library(sandwich)
+library(lmtest)
+
+library(AER) 
+
+library(ggplot2) 
+library(patchwork)
+
+library(formatR)
+
+library(stargazer)
+
+library(dplyr)
+
+```
+
+```{r global options, include = FALSE}
+knitr::opts_chunk$set(include = FALSE, message = FALSE, warning = FALSE )
+
+knitr::knit_engines$set(problem_description = function(options) {
+  code <- paste(options$code, collapse = "\n")
+})
+
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+
+```
+
+```{r load data}
+d_pro <- fread('Data/prolific.csv')
+head(d_pro)
+
+d_qual <- fread('Data/qualtrics.csv')
+head(d_qual)
+```
+
+```{r cleaning data}
+
+d_qual_fields <- d_qual[c(1,2), ]
+d_qual_fields
+
+d_qual <- d_qual[-c(1,2), ]
+head(d_qual)
+
+d_pro <- d_pro %>% 
+       rename("PROLIFIC_PID" = "Participant id", "Status_pro" = "Status")
+
+d_qual <- d_qual %>% 
+       rename("Status_qual" = "Status")
+
+```
+
+
+```{r merge the datasets}
+
+d <- merge(d_pro,d_qual,by=c("PROLIFIC_PID"))
+head(d)
+```
+
+```{r dropping subjects with no consent or failed commitment}
+d_no_consent <- d[d$Status_pro == 'RETURNED']
+d <- d[d$Status_pro != 'RETURNED']
+```
+
+```{r creating binary Treatment column}
+d$Treatment <- d$FL_5_DO
+d$Treatment <-replace(d$Treatment, d$FL_5_DO == 'TreatmentBlock', 1)
+d$Treatment <-replace(d$Treatment, d$FL_5_DO == 'ControlBlock', 0)
+```
+
+```{r cleaning columns}
+d$Q10 <- substr(d$Q10, 0, 1)
+d$Q10 <- as.integer(d$Q10)
+```
+
+```{r dropping unnecessary columns}
+d <- d[, c('Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8','Q9','Q10', 'Covid-19 working from home',	'Age',	'Sex',	'Ethnicity simplified',	'Country of birth',	'Country of residence',	'Nationality',	'Language',	'Student status',	'Employment status', 'Treatment', 'PROLIFIC_PID'
+)]
+head(d)
+```
+
