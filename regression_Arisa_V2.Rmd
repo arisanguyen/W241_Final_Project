@@ -1,0 +1,186 @@
+---
+title: "241_Final_Project_Arisa"
+output: pdf_document
+---
+
+```{r load packages, message = FALSE}
+library(data.table)
+
+library(sandwich)
+library(lmtest)
+
+library(AER) 
+
+library(ggplot2) 
+library(patchwork)
+
+library(formatR)
+
+library(stargazer)
+
+library(dplyr)
+
+```
+
+```{r global options, include = FALSE}
+knitr::opts_chunk$set(include = FALSE, message = FALSE, warning = FALSE )
+
+knitr::knit_engines$set(problem_description = function(options) {
+  code <- paste(options$code, collapse = "\n")
+})
+
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+
+```
+
+```{r load data}
+d_pro <- fread('Data/prolific.csv')
+#head(d_pro)
+
+d_qual <- fread('Data/qualtrics.csv')
+#head(d_qual)
+```
+
+```{r cleaning data for better merging}
+
+# removes extra non-data header rows
+d_qual_fields <- d_qual[c(1,2), ]
+#d_qual_fields
+
+# removes extra non-data header rows
+d_qual <- d_qual[-c(1,2), ]
+#head(d_qual)
+
+d_pro <- d_pro %>% 
+       rename("PROLIFIC_PID" = "Participant id", "Status_pro" = "Status")
+
+d_qual <- d_qual %>% 
+       rename("Status_qual" = "Status")
+
+```
+
+```{r merging the datasets}
+
+d <- merge(d_pro,d_qual,by=c("PROLIFIC_PID"))
+head(d)
+```
+
+```{r dropping subjects with no consent or failed commitment}
+d_no_consent <- d[d$Status_pro == 'RETURNED']
+d <- d[d$Status_pro != 'RETURNED']
+```
+
+```{r creating binary Treatment column}
+d$Treatment <- d$FL_5_DO
+d$Treatment <-replace(d$Treatment, d$FL_5_DO == 'TreatmentBlock', 1)
+d$Treatment <-replace(d$Treatment, d$FL_5_DO == 'ControlBlock', 0)
+```
+
+```{r dropping unnecessary columns}
+d <- d[, c('Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8','Q9','Q10', 'Covid-19 working from home',	'Age',	'Sex',	'Ethnicity simplified',	'Country of birth',	'Country of residence',	'Nationality',	'Language',	'Student status',	'Employment status', 'Treatment', 'PROLIFIC_PID'
+)]
+head(d)
+```
+
+
+```{r data pre-processing covariate fields}
+
+# field from user's Prolific profile
+d$'Employment status' <- as.factor(d$'Employment status')
+
+# field from user's Prolific profile
+d$'Ethnicity simplified' <- as.factor(d$'Ethnicity simplified')
+
+# field from user's Prolific profile
+d$Age <- as.numeric(d$Age)
+
+# field from user's Prolific profile
+d$Sex <- as.factor(d$Sex)
+
+# field from Qualtrics survey
+# What industry do you work in?
+d$Q1 <- as.factor(d$Q1)
+
+# field from Qualtrics survey
+# What was your work setting before the start of COVID-19?
+d$Q2 <- as.factor(d$Q2)
+
+# field from Qualtrics survey
+# What was your work setting for the majority of 2021 during the pandemic?
+d$Q3 <- as.factor(d$Q3)
+
+# field from Qualtrics survey
+# What is your work setting now?
+d$Q4 <- as.factor(d$Q4)
+
+```
+
+```{r data pre-processing outcome fields}
+
+# field from Qualtrics survey
+# How much do you think working from the office improves work life balance?
+d$Q5 <-replace(d$Q5, d$Q5 == 'None at all', 1)
+d$Q5 <-replace(d$Q5, d$Q5 == 'A little', 2)
+d$Q5 <-replace(d$Q5, d$Q5 == 'A moderate amount', 3)
+d$Q5 <-replace(d$Q5, d$Q5 == 'A lot', 4)
+d$Q5 <-replace(d$Q5, d$Q5 == 'A great deal', 5)
+
+# field from Qualtrics survey
+# How much do you think working from the office improves career growth?
+d$Q6 <-replace(d$Q6, d$Q6 == 'None at all', 1)
+d$Q6 <-replace(d$Q6, d$Q6 == 'A little', 2)
+d$Q6 <-replace(d$Q6, d$Q6 == 'A moderate amount', 3)
+d$Q6 <-replace(d$Q6, d$Q6 == 'A lot', 4)
+d$Q6 <-replace(d$Q6, d$Q6 == 'A great deal', 5)
+
+# field from Qualtrics survey
+# How much do you think working from the office improves in person collaboration?
+d$Q7 <-replace(d$Q7, d$Q7 == 'None at all', 1)
+d$Q7 <-replace(d$Q7, d$Q7 == 'A little', 2)
+d$Q7 <-replace(d$Q7, d$Q7 == 'A moderate amount', 3)
+d$Q7 <-replace(d$Q7, d$Q7 == 'A lot', 4)
+d$Q7 <-replace(d$Q7, d$Q7 == 'A great deal', 5)
+
+# field from Qualtrics survey
+# How important is working from the office?
+d$Q8 <-replace(d$Q8, d$Q8 == 'Not at all important', 1)
+d$Q8 <-replace(d$Q8, d$Q8 == 'Slightly important', 2)
+d$Q8 <-replace(d$Q8, d$Q8 == 'Moderately important', 3)
+d$Q8 <-replace(d$Q8, d$Q8 == 'Very important', 4)
+d$Q8 <-replace(d$Q8, d$Q8 == 'Extremely important', 5)
+
+# field from Qualtrics survey
+# What is your ideal number of days working from the office?
+d$Q10 <- substr(d$Q10, 0, 1)
+d$Q10 <- as.numeric(d$Q10)
+
+```
+
+```{r creating overall outcome field}
+
+d$overall <- as.numeric(d$Q5)+ as.numeric(d$Q6) + as.numeric(d$Q7) + as.numeric(d$Q8) + as.numeric(d$Q10)
+```
+
+```{r simple regression}
+
+model_s <- d[, lm(overall ~ Treatment )]
+#coeftest(model_2, vcov = vcovHC(model_2))
+summary(model_s)
+
+```
+
+```{r complex regression}
+
+model_c <- d[, lm(overall ~ Treatment + `Employment status` + Age + Sex + `Ethnicity simplified` + Q1 + Q2 + Q3 + Q4)]
+#coeftest(model_2, vcov = vcovHC(model_2))
+summary(model_c)
+
+```
+
+```{r f-test}
+
+f_test <- aov(overall ~ Treatment + `Employment status` + Age + Sex + `Ethnicity simplified` + Q1 + Q2 + Q3 + Q4, data = d)
+summary(f_test)
+
+```
+
