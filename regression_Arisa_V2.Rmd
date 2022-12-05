@@ -77,7 +77,7 @@ d$Treatment <-replace(d$Treatment, d$FL_5_DO == 'ControlBlock', 0)
 ```
 
 ```{r dropping unnecessary columns}
-d <- d[, c('Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8','Q9','Q10', 'Covid-19 working from home',	'Age',	'Sex',	'Ethnicity simplified',	'Country of birth',	'Country of residence',	'Nationality',	'Language',	'Student status',	'Employment status', 'Treatment', 'PROLIFIC_PID'
+d <- d[, c('Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8','Q10', 'Age',	'Sex',	'Ethnicity simplified',	'Country of birth',	'Country of residence',	'Nationality',	'Language',	'Student status',	'Employment status', 'Treatment', 'PROLIFIC_PID'
 )]
 head(d)
 ```
@@ -164,16 +164,18 @@ d$overall <- as.numeric(d$Q5)+ as.numeric(d$Q6) + as.numeric(d$Q7) + as.numeric(
 ```{r simple regression}
 
 model_s <- d[, lm(overall ~ Treatment )]
-#coeftest(model_2, vcov = vcovHC(model_2))
-summary(model_s)
+coeftest(model_s, vcov = vcovHC(model_s)) # heteroskedatic-consistent errors
+#coeftest(model_s, vcov = vcovCL(model_s)) # clustered errors
+#summary(model_s)
 
 ```
 
 ```{r complex regression}
 
 model_c <- d[, lm(overall ~ Treatment + `Employment status` + Age + Sex + `Ethnicity simplified` + Q1 + Q2 + Q3 + Q4)]
-#coeftest(model_2, vcov = vcovHC(model_2))
-summary(model_c)
+coeftest(model_c, vcov = vcovHC(model_c,type="HC1")) # heteroskedatic-consistent errors
+#coeftest(model_c, vcov = vcovCL(model_c)) # clustered errors
+#summary(model_c)
 
 ```
 
@@ -181,6 +183,9 @@ summary(model_c)
 
 f_test <- aov(overall ~ Treatment + `Employment status` + Age + Sex + `Ethnicity simplified` + Q1 + Q2 + Q3 + Q4, data = d)
 summary(f_test)
+
+```
+```{r}
 
 ```
 
