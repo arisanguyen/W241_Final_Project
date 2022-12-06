@@ -124,6 +124,7 @@ d$Q5 <-replace(d$Q5, d$Q5 == 'A little', 2)
 d$Q5 <-replace(d$Q5, d$Q5 == 'A moderate amount', 3)
 d$Q5 <-replace(d$Q5, d$Q5 == 'A lot', 4)
 d$Q5 <-replace(d$Q5, d$Q5 == 'A great deal', 5)
+d$Q5 <- as.numeric(d$Q5)
 
 # field from Qualtrics survey
 # How much do you think working from the office improves career growth?
@@ -132,6 +133,7 @@ d$Q6 <-replace(d$Q6, d$Q6 == 'A little', 2)
 d$Q6 <-replace(d$Q6, d$Q6 == 'A moderate amount', 3)
 d$Q6 <-replace(d$Q6, d$Q6 == 'A lot', 4)
 d$Q6 <-replace(d$Q6, d$Q6 == 'A great deal', 5)
+d$Q6 <- as.numeric(d$Q6)
 
 # field from Qualtrics survey
 # How much do you think working from the office improves in person collaboration?
@@ -140,6 +142,7 @@ d$Q7 <-replace(d$Q7, d$Q7 == 'A little', 2)
 d$Q7 <-replace(d$Q7, d$Q7 == 'A moderate amount', 3)
 d$Q7 <-replace(d$Q7, d$Q7 == 'A lot', 4)
 d$Q7 <-replace(d$Q7, d$Q7 == 'A great deal', 5)
+d$Q7 <- as.numeric(d$Q7)
 
 # field from Qualtrics survey
 # How important is working from the office?
@@ -148,6 +151,7 @@ d$Q8 <-replace(d$Q8, d$Q8 == 'Slightly important', 2)
 d$Q8 <-replace(d$Q8, d$Q8 == 'Moderately important', 3)
 d$Q8 <-replace(d$Q8, d$Q8 == 'Very important', 4)
 d$Q8 <-replace(d$Q8, d$Q8 == 'Extremely important', 5)
+d$Q8 <- as.numeric(d$Q8)
 
 # field from Qualtrics survey
 # What is your ideal number of days working from the office?
@@ -158,7 +162,7 @@ d$Q10 <- as.numeric(d$Q10)
 
 ```{r creating overall outcome field}
 
-d$overall <- as.numeric(d$Q5)+ as.numeric(d$Q6) + as.numeric(d$Q7) + as.numeric(d$Q8) + as.numeric(d$Q10)
+d$overall <- d$Q5+ d$Q6 + d$Q7 + d$Q8 + d$Q10
 ```
 
 ```{r simple regression}
@@ -185,7 +189,188 @@ f_test <- aov(overall ~ Treatment + `Employment status` + Age + Sex + `Ethnicity
 summary(f_test)
 
 ```
+
+```{r outcome histogram plots}
+
+# OVERALL SCORE CONTROL 
+d[d$Treatment == 0]$overall %>% hist(
+main="Overall Opinion Score Distribution - Control",
+xlab="Score",
+xlim=c(0,25), 
+ylim=c(0,20), 
+col="#4878CF"
+)
+
+# OVERALL SCORE TREATMENT
+d[d$Treatment == 1]$overall %>% hist(
+main="Overall Opinion Score Distribution - Treatment",
+xlab="Score",
+xlim=c(0,25), 
+ylim=c(0,20), 
+col="#4878CF"
+)
+
+```
+
 ```{r}
+
+# Q5 SCORE 
+#How much do you think working from the office improves work life balance?
+d[d$Treatment == 0]$Q5 %>% hist(
+main="Q5 - Control",
+xlab="Score",
+xlim=c(0,5),
+breaks=c(0,1,2,3,4,5),
+#cex.main=0.75,
+col="#6ACC65"
+)
+
+# Q5 SCORE 
+d[d$Treatment == 1]$Q5 %>% hist(
+main="Q5 - Treatment",
+xlab="Score",
+xlim=c(0,5),
+breaks=c(0,1,2,3,4,5),
+#cex.main=0.75,
+col="#6ACC65"
+)
+
+```
+
+```{r}
+# Q6 SCORE 
+# How much do you think working from the office improves career growth?
+d[d$Treatment == 0]$Q6 %>% hist(
+main="Q6 - Control",
+xlab="Score",
+xlim=c(0,5),
+ylim=c(0,40),
+breaks=c(0,1,2,3,4,5),
+cex.main=0.75,
+col="#D65F5F"
+)
+
+# Q6 SCORE 
+d[d$Treatment == 1]$Q6 %>% hist(
+main="Q6 - Treatment",
+xlab="Score",
+xlim=c(0,5),
+ylim=c(0,40),
+breaks=c(0,1,2,3,4,5),
+cex.main=0.75,
+col="#D65F5F"
+)
+```
+
+```{r}
+# Q7 SCORE 
+# How much do you think working from the office improves in person collaboration?
+d[d$Treatment == 0]$Q7 %>% hist(
+main="Q7 - Control",
+xlab="Score",
+xlim=c(0,5),
+ylim=c(0,30),
+breaks=c(0,1,2,3,4,5),
+cex.main=0.75,
+col="#B47CC7"
+)
+
+# Q7 SCORE 
+d[d$Treatment == 1]$Q7 %>% hist(
+main="Q7 - Treatment",
+xlab="Score",
+xlim=c(0,5),
+ylim=c(0,30),
+breaks=c(0,1,2,3,4,5),
+cex.main=0.75,
+col="#B47CC7"
+)
+```
+
+```{r}
+# Q8 SCORE 
+# How important is working from the office?
+d[d$Treatment == 0]$Q8 %>% hist(
+main="Q8 - Control",
+xlab="Score",
+xlim=c(0,5),
+ylim=c(0,40),
+breaks=c(0,1,2,3,4,5),
+cex.main=0.75,
+col="#C4AD66"
+)
+
+# Q8 SCORE 
+d[d$Treatment == 1]$Q8 %>% hist(
+main="Q8 - Treatment",
+xlab="Score",
+xlim=c(0,5),
+ylim=c(0,40),
+breaks=c(0,1,2,3,4,5),
+cex.main=0.75,
+col="#C4AD66"
+)
+```
+
+```{r}
+# Q10 SCORE 
+#What is your ideal number of days working from the office?
+d[d$Treatment == 0]$Q10 %>% hist(
+main="Q10 - Control",
+xlab="Score",
+xlim=c(0,5),
+ylim=c(0,60),
+breaks=c(0,1,2,3,4,5),
+cex.main=0.75,
+col="#77BEDB"
+)
+
+# Q10 SCORE 
+d[d$Treatment == 1]$Q10 %>% hist(
+main="Q10 - Treatment",
+xlab="Score",
+xlim=c(0,5),
+ylim=c(0,60),
+breaks=c(0,1,2,3,4,5),
+cex.main=0.75,
+col="#77BEDB"
+)
+```
+
+
+```{r overall outcome box plots}
+
+boxplot(overall~Treatment,data=d, main="Overall Opinion Score",
+   xlab="Control                                     Treatment", ylab="Score", col="#4878CF")
+
+```
+
+```{r}
+#model_c <- d[, lm(overall ~ Treatment + `Employment status` + Age + Sex + `Ethnicity simplified` + Q1 + Q2 + Q3 + Q4)]
+
+ggplot(d, aes(x=`Employment status`)) +
+  geom_bar()
+
+ggplot(d, aes(x=Age)) +
+  geom_bar()
+
+mean(d$Age)
+
+ggplot(d, aes(x=`Ethnicity simplified` )) +
+  geom_bar(aes(y = 100*(..count..)/sum(..count..))) +
+  ylab('Sample Percentage') +
+  ggtitle('Ethnic Breakdown of Participants')
+#+ 
+        ## version 3.0.0
+       # scale_y_continuous(labels=percent)
+
+ggplot(d, aes(x=`Sex`)) +
+  geom_bar()
+
+#Industry
+ggplot(d, aes(x=Q1, fill = Q1)) +
+  geom_bar() + ggtitle('Industry Breakdown of Participants') +     theme(axis.text.x=element_blank()
+        ) + xlab('Industry')
 
 ```
 
