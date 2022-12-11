@@ -202,7 +202,7 @@ coeftest(model_c, vcov = vcovHC(model_c,type="HC1")) # heteroskedatic-consistent
 
 ```{r interactions regression}
 
-model_i <- d[, lm(overall ~ Treatment*Industry + Treatment*`Work Setting Now` + `Employment status` + Age + Sex + `Ethnicity simplified` + Industry + `Work Setting Pre-Covid` + `Work Setting Thru Covid` + `Work Setting Now`)]
+model_i <- d[, lm(overall ~ Treatment*`Work Setting Now` + `Employment status` + Age + Sex + `Ethnicity simplified` + Industry + `Work Setting Pre-Covid` + `Work Setting Thru Covid` + `Work Setting Now`)]
 coeftest(model_i, vcov = vcovHC(model_i,type="HC1")) # heteroskedatic-consistent errors
 #coeftest(model_c, vcov = vcovCL(model_c)) # clustered errors
 #summary(model_c)
@@ -218,7 +218,7 @@ stargazer(model_s, model_c, model_i, type = 'text', title = 'Regression Models',
 
 ```{r f-test}
 
-f_test <- aov(overall ~ Treatment + `Employment status` + Age + Sex + `Ethnicity simplified` + Q1 + Q2 + Q3 + Q4, data = d)
+f_test <- aov(overall ~ Treatment*`Work Setting Now` + `Employment status` + Age + Sex + `Ethnicity simplified` + Industry + `Work Setting Pre-Covid` + `Work Setting Thru Covid` + `Work Setting Now`, data = d)
 summary(f_test)
 
 ```
@@ -401,7 +401,7 @@ ggplot(d, aes(x=`Sex`)) +
   geom_bar()
 
 #Industry
-ggplot(d, aes(x=Q1, fill = Q1)) +
+ggplot(d, aes(x=Industry, fill = Industry)) +
   geom_bar() + ggtitle('Industry Breakdown of Participants') +     theme(axis.text.x=element_blank()
         ) + xlab('Industry')
 
@@ -439,7 +439,7 @@ ggplot(d, aes(x= `Work Setting Pre-Covid` , fill=Treatment)) +
 
 #Q3, grouped bar graph
 
-ggplot(d, aes(x= `Work Setting During Covid` , fill=Treatment)) + 
+ggplot(d, aes(x= `Work Setting Thru Covid` , fill=Treatment)) + 
   geom_bar(position = position_dodge(preserve = "single")) + labs(title = "Work Setting During Covid Covariate Balance Check")
 
 #Q4, grouped bar graph
